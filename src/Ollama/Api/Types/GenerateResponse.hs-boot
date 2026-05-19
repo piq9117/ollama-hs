@@ -1,0 +1,13 @@
+module Ollama.Api.Types.GenerateResponse where
+import qualified Data.Aeson
+import qualified Ollama.Api.Common
+data GenerateResponse
+instance Show GenerateResponse
+instance Eq GenerateResponse
+instance Data.Aeson.FromJSON GenerateResponse
+instance Data.Aeson.ToJSON GenerateResponse
+data GenerateResponseDone_reason
+instance Show GenerateResponseDone_reason
+instance Eq GenerateResponseDone_reason
+instance Data.Aeson.FromJSON GenerateResponseDone_reason
+instance Data.Aeson.ToJSON GenerateResponseDone_reason

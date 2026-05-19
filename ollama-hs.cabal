@@ -1,0 +1,100 @@
+cabal-version: 1.12
+name:          ollama-hs
+version:       0.1.0.0
+build-type:    Simple
+license:       MIT
+license-file:  LICENSE
+synopsis:      Haskell client for Ollama
+maintainer:    piq9117
+description:   Haskell client for Ollama
+category:      Web, Ollama, LLM
+homepage:      https://github.com/piq9117/ollama-hs#readme
+bug-reports:   https://github.com/piq9117/ollama-hs/issues
+
+source-repository head
+  type: git
+  location: https://github.com/piq9117/ollama-hs.git
+
+library
+  exposed-modules:
+    Ollama.Api
+    Ollama.Api.Common
+    Ollama.Api.Configuration
+    Ollama.Api.Operations.AnthropicMessages
+    Ollama.Api.Operations.CheckHealth
+    Ollama.Api.Operations.CopyModel
+    Ollama.Api.Operations.CreateBlob
+    Ollama.Api.Operations.CreateModel
+    Ollama.Api.Operations.DeleteModel
+    Ollama.Api.Operations.GenerateChat
+    Ollama.Api.Operations.GenerateCompletion
+    Ollama.Api.Operations.GenerateEmbedding
+    Ollama.Api.Operations.GenerateEmbeddingLegacy
+    Ollama.Api.Operations.GetHealth
+    Ollama.Api.Operations.GetStatus
+    Ollama.Api.Operations.GetVersion
+    Ollama.Api.Operations.HeadBlob
+    Ollama.Api.Operations.HeadLocalModels
+    Ollama.Api.Operations.HeadVersion
+    Ollama.Api.Operations.ListLocalModels
+    Ollama.Api.Operations.ListRunningModels
+    Ollama.Api.Operations.ModelRecommendationsExperimental
+    Ollama.Api.Operations.OpenaiAudioTranscriptions
+    Ollama.Api.Operations.OpenaiChatCompletions
+    Ollama.Api.Operations.OpenaiCompletions
+    Ollama.Api.Operations.OpenaiEmbeddings
+    Ollama.Api.Operations.OpenaiImageEdits
+    Ollama.Api.Operations.OpenaiImageGenerations
+    Ollama.Api.Operations.OpenaiListModels
+    Ollama.Api.Operations.OpenaiResponses
+    Ollama.Api.Operations.OpenaiRetrieveModel
+    Ollama.Api.Operations.PullModel
+    Ollama.Api.Operations.PushModel
+    Ollama.Api.Operations.ShowModel
+    Ollama.Api.Operations.Signout
+    Ollama.Api.Operations.SignoutDeprecated
+    Ollama.Api.Operations.WebFetchExperimental
+    Ollama.Api.Operations.WebSearchExperimental
+    Ollama.Api.Operations.Whoami
+    Ollama.Api.SecuritySchemes
+    Ollama.Api.TypeAlias
+    Ollama.Api.Types
+    Ollama.Api.Types.ChatRequest
+    Ollama.Api.Types.ChatResponse
+    Ollama.Api.Types.Duration
+    Ollama.Api.Types.ErrorResponse
+    Ollama.Api.Types.GenerateRequest
+    Ollama.Api.Types.GenerateResponse
+    Ollama.Api.Types.ListModelResponse
+    Ollama.Api.Types.Logprob
+    Ollama.Api.Types.Message
+    Ollama.Api.Types.ModelDetails
+    Ollama.Api.Types.ModelRecommendation
+    Ollama.Api.Types.ProcessModelResponse
+    Ollama.Api.Types.ProgressResponse
+    Ollama.Api.Types.ShowResponse
+    Ollama.Api.Types.Tensor
+    Ollama.Api.Types.ThinkValue
+    Ollama.Api.Types.Tool
+    Ollama.Api.Types.ToolCall
+    Ollama.Api.Types.ToolFunction
+    Ollama.Api.Types.UserResponse
+
+  hs-source-dirs:   src
+  build-depends:
+      aeson
+    , base                  >=4.7 && <5
+    , bytestring
+    , ghc-prim
+    , http-client
+    , http-conduit
+    , http-types
+    , mtl
+    , scientific
+    , text
+    , time
+    , transformers
+    , unordered-containers
+    , vector
+
+  default-language: Haskell2010

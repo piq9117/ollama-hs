@@ -1,0 +1,1534 @@
+openapi: "3.1.0"
+info:
+  title: Ollama API
+  description: |
+    This is the API for Ollama, a tool for running large language models locally.
+
+    The API is organized around the [REST](https://en.wikipedia.org/wiki/REST) principle.
+    Most endpoints accept and return JSON, with some endpoints supporting
+    [NDJSON](https://github.com/ndjson/ndjson-spec) streaming for progressive responses.
+  version: 0.5.0
+  contact:
+    name: Ollama
+    url: https://ollama.com
+
+servers:
+  - url: http://localhost:11434
+    description: Local Ollama server (default port)
+
+paths:
+  /:
+    head:
+      operationId: checkHealth
+      summary: Check if the Ollama server is running
+      responses:
+        "200":
+          description: Server is running
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "Ollama is running"
+    get:
+      operationId: getHealth
+      summary: Check if the Ollama server is running
+      responses:
+        "200":
+          description: Server is running
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "Ollama is running"
+
+  /api/version:
+    head:
+      operationId: headVersion
+      summary: Get the server version
+      responses:
+        "200":
+          description: Server version
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  version:
+                    type: string
+                    example: "0.5.0"
+    get:
+      operationId: getVersion
+      summary: Get the server version
+      responses:
+        "200":
+          description: Server version
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  version:
+                    type: string
+                    example: "0.5.0"
+
+  /api/status:
+    get:
+      operationId: getStatus
+      summary: Get the server status including cloud information
+      responses:
+        "200":
+          description: Server status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  cloud:
+                    type: object
+                    properties:
+                      disabled:
+                        type: boolean
+                      source:
+                        type: string
+
+  /api/pull:
+    post:
+      operationId: pullModel
+      summary: Download a model from a registry
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                model:
+                  type: string
+                  description: Name of the model to pull
+                  example: llama3.2
+                name:
+                  type: string
+                  description: Deprecated - use model instead
+                insecure:
+                  type: boolean
+                  description: Allow insecure connections
+                stream:
+                  type: boolean
+                  description: Stream progress updates (default true)
+      responses:
+        "200":
+          description: Model pull started
+          content:
+            application/x-ndjson:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/ProgressResponse"
+                  - $ref: "#/components/schemas/ErrorResponse"
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProgressResponse"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/push:
+    post:
+      operationId: pushModel
+      summary: Upload a model to a registry
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                model:
+                  type: string
+                  description: Name of the model to push
+                  example: myuser/mymodel
+                name:
+                  type: string
+                  description: Deprecated - use model instead
+                insecure:
+                  type: boolean
+                  description: Allow insecure connections
+                stream:
+                  type: boolean
+                  description: Stream progress updates (default true)
+      responses:
+        "200":
+          description: Model push started
+          content:
+            application/x-ndjson:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/ProgressResponse"
+                  - $ref: "#/components/schemas/ErrorResponse"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/tags:
+    get:
+      operationId: listLocalModels
+      summary: List models that are available locally
+      responses:
+        "200":
+          description: List of available models
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  models:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ListModelResponse"
+    head:
+      operationId: headLocalModels
+      summary: Check if model list is available
+      responses:
+        "200":
+          description: OK
+
+  /api/show:
+    post:
+      operationId: showModel
+      summary: Show information about a model including details, modelfile, license, etc.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                model:
+                  type: string
+                  description: Name of the model
+                  example: llama3.2
+                name:
+                  type: string
+                  description: Deprecated - use model instead
+                system:
+                  type: string
+                  description: System prompt to override
+                template:
+                  type: string
+                  description: Deprecated - template override
+                verbose:
+                  type: boolean
+                  description: Show verbose output including tensor data
+                options:
+                  type: object
+                  description: Additional model options
+      responses:
+        "200":
+          description: Model information
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShowResponse"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Model not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/delete:
+    delete:
+      operationId: deleteModel
+      summary: Delete a model and its associated layers
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                model:
+                  type: string
+                  description: Name of the model to delete
+                  example: llama3.2
+                name:
+                  type: string
+                  description: Deprecated - use model instead
+      responses:
+        "200":
+          description: Model deleted
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Model not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/me:
+    post:
+      operationId: whoami
+      summary: Get information about the currently signed-in user
+      responses:
+        "200":
+          description: User information
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "503":
+          description: Account service unavailable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/signout:
+    post:
+      operationId: signout
+      summary: Sign out the current user by disconnecting their key
+      responses:
+        "200":
+          description: Successfully signed out
+        "401":
+          description: Not currently signed in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/user/keys/{encodedKey}:
+    delete:
+      operationId: signoutDeprecated
+      summary: Sign out (deprecated)
+      deprecated: true
+      parameters:
+        - name: encodedKey
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Successfully signed out
+        "401":
+          description: Not currently signed in
+        "500":
+          description: Internal error
+
+  /api/create:
+    post:
+      operationId: createModel
+      summary: Create a model from a Modelfile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                model:
+                  type: string
+                  description: Name of the model to create
+                  example: mymodel
+                name:
+                  type: string
+                  description: Deprecated - use model instead
+                stream:
+                  type: boolean
+                  description: Stream progress (default true)
+                quantize:
+                  type: string
+                  description: Quantization format
+                from:
+                  type: string
+                  description: Source model name or file path
+                files:
+                  type: object
+                  description: Map of files to include
+                  additionalProperties:
+                    type: string
+                adapters:
+                  type: object
+                  description: Map of LoRA adapters to include
+                  additionalProperties:
+                    type: string
+                template:
+                  type: string
+                  description: Prompt template
+                license:
+                  description: License string or list of strings
+                  oneOf:
+                    - type: string
+                    - type: array
+                      items:
+                        type: string
+                system:
+                  type: string
+                  description: System prompt
+                parameters:
+                  type: object
+                  description: Model hyperparameters
+                messages:
+                  type: array
+                  description: Messages to include in the model
+                  items:
+                    $ref: "#/components/schemas/Message"
+                renderer:
+                  type: string
+                parser:
+                  type: string
+                requires:
+                  type: string
+                  description: Minimum Ollama version required
+                info:
+                  type: object
+                  description: Additional model metadata
+                quantization:
+                  type: string
+                  description: Deprecated - use quantize instead
+      responses:
+        "200":
+          description: Model creation started
+          content:
+            application/x-ndjson:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/ProgressResponse"
+                  - $ref: "#/components/schemas/ErrorResponse"
+
+  /api/blobs/{digest}:
+    post:
+      operationId: createBlob
+      summary: Create a blob from a file
+      parameters:
+        - name: digest
+          in: path
+          required: true
+          schema:
+            type: string
+            description: SHA256 digest of the blob
+      requestBody:
+        required: true
+        content:
+          application/octet-stream:
+            schema:
+              type: string
+              format: binary
+      responses:
+        "201":
+          description: Blob created
+        "200":
+          description: Blob already exists
+        "400":
+          description: Bad request (e.g. digest mismatch)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    head:
+      operationId: headBlob
+      summary: Check if a blob exists
+      parameters:
+        - name: digest
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Blob exists
+        "404":
+          description: Blob not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/copy:
+    post:
+      operationId: copyModel
+      summary: Copy a model to a new name
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - source
+                - destination
+              properties:
+                source:
+                  type: string
+                  description: Source model name
+                  example: llama3.2
+                destination:
+                  type: string
+                  description: Destination model name
+                  example: my-llama
+      responses:
+        "200":
+          description: Model copied
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Source model not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/experimental/web_search:
+    post:
+      operationId: webSearchExperimental
+      summary: Proxy a web search request to the cloud
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Search results
+
+  /api/experimental/web_fetch:
+    post:
+      operationId: webFetchExperimental
+      summary: Proxy a web fetch request to the cloud
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Fetched content
+
+  /api/experimental/model-recommendations:
+    get:
+      operationId: modelRecommendationsExperimental
+      summary: Get model recommendations
+      responses:
+        "200":
+          description: Model recommendations
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  recommendations:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ModelRecommendation"
+
+  /api/ps:
+    get:
+      operationId: listRunningModels
+      summary: List models that are currently loaded in memory
+      responses:
+        "200":
+          description: List of loaded models
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  models:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ProcessModelResponse"
+
+  /api/generate:
+    post:
+      operationId: generateCompletion
+      summary: Generate a response from a model given a prompt
+      x-inference-endpoint: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenerateRequest"
+      responses:
+        "200":
+          description: Generated response
+          content:
+            application/x-ndjson:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/GenerateResponse"
+                  - $ref: "#/components/schemas/ErrorResponse"
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenerateResponse"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Model not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/chat:
+    post:
+      operationId: generateChat
+      summary: Generate the next message in a chat with a model
+      x-inference-endpoint: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChatRequest"
+      responses:
+        "200":
+          description: Chat response
+          content:
+            application/x-ndjson:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/ChatResponse"
+                  - $ref: "#/components/schemas/ErrorResponse"
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChatResponse"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Model not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/embed:
+    post:
+      operationId: generateEmbedding
+      summary: Generate embeddings from a model
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                model:
+                  type: string
+                  example: llama3.2
+                input:
+                  description: Text or array of text to embed
+                  oneOf:
+                    - type: string
+                    - type: array
+                      items:
+                        type: string
+                keep_alive:
+                  $ref: "#/components/schemas/Duration"
+                truncate:
+                  type: boolean
+                  description: Truncate input to fit context length
+                dimensions:
+                  type: integer
+                  description: Truncate output embedding to this many dimensions
+                options:
+                  type: object
+                  description: Model-specific options
+      responses:
+        "200":
+          description: Generated embeddings
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  model:
+                    type: string
+                  embeddings:
+                    type: array
+                    items:
+                      type: array
+                      items:
+                        type: number
+                        format: float
+                  total_duration:
+                    type: integer
+                    description: Duration in nanoseconds
+                  load_duration:
+                    type: integer
+                    description: Duration in nanoseconds
+                  prompt_eval_count:
+                    type: integer
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Model not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/embeddings:
+    post:
+      operationId: generateEmbeddingLegacy
+      summary: Generate a single embedding (legacy endpoint)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                model:
+                  type: string
+                  example: llama3.2
+                prompt:
+                  type: string
+                  description: Text to embed
+                keep_alive:
+                  $ref: "#/components/schemas/Duration"
+                options:
+                  type: object
+                  description: Model-specific options
+      responses:
+        "200":
+          description: Embedding generated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  embedding:
+                    type: array
+                    items:
+                      type: number
+                      format: double
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Model not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # OpenAI compatibility endpoints
+  /v1/chat/completions:
+    post:
+      operationId: openaiChatCompletions
+      summary: OpenAI-compatible chat completions endpoint
+      description: Wraps the /api/chat endpoint in an OpenAI-compatible format
+      x-inference-endpoint: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Chat completion
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /v1/completions:
+    post:
+      operationId: openaiCompletions
+      summary: OpenAI-compatible text completions endpoint
+      description: Wraps the /api/generate endpoint in an OpenAI-compatible format
+      x-inference-endpoint: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Completion
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /v1/embeddings:
+    post:
+      operationId: openaiEmbeddings
+      summary: OpenAI-compatible embeddings endpoint
+      description: Wraps the /api/embed endpoint in an OpenAI-compatible format
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Embedding
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /v1/models:
+    get:
+      operationId: openaiListModels
+      summary: OpenAI-compatible list models endpoint
+      description: Wraps the /api/tags endpoint in an OpenAI-compatible format
+      responses:
+        "200":
+          description: Model list
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /v1/models/{model}:
+    get:
+      operationId: openaiRetrieveModel
+      summary: OpenAI-compatible retrieve model endpoint
+      description: Wraps the /api/show endpoint in an OpenAI-compatible format
+      parameters:
+        - name: model
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Model details
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /v1/responses:
+    post:
+      operationId: openaiResponses
+      summary: OpenAI Responses API endpoint
+      x-inference-endpoint: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /v1/images/generations:
+    post:
+      operationId: openaiImageGenerations
+      summary: OpenAI-compatible image generations endpoint
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Generated images
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /v1/images/edits:
+    post:
+      operationId: openaiImageEdits
+      summary: OpenAI-compatible image edits endpoint
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Edited images
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /v1/audio/transcriptions:
+    post:
+      operationId: openaiAudioTranscriptions
+      summary: OpenAI-compatible audio transcriptions endpoint
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Transcription
+          content:
+            application/json:
+              schema:
+                type: object
+
+  # Anthropic compatibility endpoints
+  /v1/messages:
+    post:
+      operationId: anthropicMessages
+      summary: Anthropic-compatible messages endpoint
+      description: Wraps the /api/chat endpoint in an Anthropic-compatible format
+      x-inference-endpoint: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Messages response
+          content:
+            application/json:
+              schema:
+                type: object
+
+components:
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        signin_url:
+          type: string
+          description: URL for user to sign in when unauthorized
+      required:
+        - error
+
+    Duration:
+      description: Duration value (e.g. "5m", "1h", or a number of seconds)
+      oneOf:
+        - type: string
+          example: 5m
+        - type: integer
+          example: 300
+
+    ThinkValue:
+      description: Controls thinking/reasoning for supported models
+      oneOf:
+        - type: boolean
+          description: Enable/disable thinking
+        - type: string
+          enum:
+            - high
+            - medium
+            - low
+            - max
+
+    Message:
+      type: object
+      properties:
+        role:
+          type: string
+          enum:
+            - system
+            - user
+            - assistant
+            - tool
+        content:
+          type: string
+        thinking:
+          type: string
+          description: Thinking/reasoning content from the model
+        images:
+          type: array
+          description: Base64-encoded images
+          items:
+            type: string
+        tool_calls:
+          type: array
+          items:
+            $ref: "#/components/schemas/ToolCall"
+        tool_name:
+          type: string
+        tool_call_id:
+          type: string
+
+    ToolCall:
+      type: object
+      properties:
+        id:
+          type: string
+        function:
+          type: object
+          properties:
+            index:
+              type: integer
+            name:
+              type: string
+            arguments:
+              type: object
+
+    Tool:
+      type: object
+      properties:
+        type:
+          type: string
+          example: function
+        function:
+          $ref: "#/components/schemas/ToolFunction"
+
+    ToolFunction:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        parameters:
+          type: object
+          properties:
+            type:
+              type: string
+            required:
+              type: array
+              items:
+                type: string
+            properties:
+              type: object
+
+    GenerateRequest:
+      type: object
+      required:
+        - model
+        - prompt
+      properties:
+        model:
+          type: string
+          example: llama3.2
+        prompt:
+          type: string
+          description: The prompt to send to the model
+          example: Why is the sky blue?
+        suffix:
+          type: string
+          description: Text that comes after the inserted text (for infill models)
+        system:
+          type: string
+          description: Override the model's default system prompt
+        template:
+          type: string
+          description: Override the model's default prompt template
+        context:
+          type: array
+          description: Context from a previous generate response for conversational memory
+          items:
+            type: integer
+        stream:
+          type: boolean
+          description: Stream the response (default true)
+        raw:
+          type: boolean
+          description: Disable prompt formatting
+        format:
+          oneOf:
+            - type: string
+              example: json
+            - type: object
+              description: JSON schema for structured output
+        keep_alive:
+          $ref: "#/components/schemas/Duration"
+        images:
+          type: array
+          description: Base64-encoded images for multimodal models
+          items:
+            type: string
+        options:
+          type: object
+          description: Model-specific options (temperature, top_p, etc.)
+          properties:
+            num_keep:
+              type: integer
+            seed:
+              type: integer
+            num_predict:
+              type: integer
+            top_k:
+              type: integer
+            top_p:
+              type: number
+              format: float
+            min_p:
+              type: number
+              format: float
+            typical_p:
+              type: number
+              format: float
+            repeat_last_n:
+              type: integer
+            temperature:
+              type: number
+              format: float
+            repeat_penalty:
+              type: number
+              format: float
+            presence_penalty:
+              type: number
+              format: float
+            frequency_penalty:
+              type: number
+              format: float
+            stop:
+              type: array
+              items:
+                type: string
+            num_ctx:
+              type: integer
+              description: Context length
+            num_batch:
+              type: integer
+            num_gpu:
+              type: integer
+            main_gpu:
+              type: integer
+            use_mmap:
+              type: boolean
+            num_thread:
+              type: integer
+        think:
+          $ref: "#/components/schemas/ThinkValue"
+        truncate:
+          type: boolean
+          description: Truncate the prompt if it exceeds the context length
+        shift:
+          type: boolean
+          description: Shift the chat history when hitting context length
+        logprobs:
+          type: boolean
+          description: Return log probabilities of output tokens
+        top_logprobs:
+          type: integer
+          description: Number of most likely tokens to return logprobs for (0-20)
+          minimum: 0
+          maximum: 20
+        width:
+          type: integer
+          description: Image width (for image generation models)
+        height:
+          type: integer
+          description: Image height (for image generation models)
+        steps:
+          type: integer
+          description: Number of diffusion steps (for image generation models)
+
+    GenerateResponse:
+      type: object
+      properties:
+        model:
+          type: string
+        remote_model:
+          type: string
+        remote_host:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        response:
+          type: string
+        thinking:
+          type: string
+          description: Thinking/reasoning content from the model
+        done:
+          type: boolean
+        done_reason:
+          type: string
+          enum:
+            - stop
+            - length
+            - load
+            - unload
+        context:
+          type: array
+          items:
+            type: integer
+        total_duration:
+          type: integer
+          description: Duration in nanoseconds
+        load_duration:
+          type: integer
+          description: Duration in nanoseconds
+        prompt_eval_count:
+          type: integer
+        prompt_eval_duration:
+          type: integer
+          description: Duration in nanoseconds
+        eval_count:
+          type: integer
+        eval_duration:
+          type: integer
+          description: Duration in nanoseconds
+        tool_calls:
+          type: array
+          items:
+            $ref: "#/components/schemas/ToolCall"
+        logprobs:
+          type: array
+          items:
+            $ref: "#/components/schemas/Logprob"
+        image:
+          type: string
+          description: Base64-encoded generated image (for image generation models)
+        completed:
+          type: integer
+          description: Completed steps (for image generation streaming)
+        total:
+          type: integer
+          description: Total steps (for image generation streaming)
+
+    ChatRequest:
+      type: object
+      required:
+        - model
+        - messages
+      properties:
+        model:
+          type: string
+          example: llama3.2
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/Message"
+        stream:
+          type: boolean
+        format:
+          oneOf:
+            - type: string
+              example: json
+            - type: object
+              description: JSON schema for structured output
+        keep_alive:
+          $ref: "#/components/schemas/Duration"
+        tools:
+          type: array
+          items:
+            $ref: "#/components/schemas/Tool"
+        options:
+          type: object
+          description: Model-specific options
+        think:
+          $ref: "#/components/schemas/ThinkValue"
+        truncate:
+          type: boolean
+        shift:
+          type: boolean
+        logprobs:
+          type: boolean
+        top_logprobs:
+          type: integer
+          description: Number of most likely tokens to return logprobs for (0-20)
+          minimum: 0
+          maximum: 20
+
+    ChatResponse:
+      type: object
+      properties:
+        model:
+          type: string
+        remote_model:
+          type: string
+        remote_host:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        message:
+          $ref: "#/components/schemas/Message"
+        done:
+          type: boolean
+        done_reason:
+          type: string
+          enum:
+            - stop
+            - length
+            - load
+            - unload
+        total_duration:
+          type: integer
+          description: Duration in nanoseconds
+        load_duration:
+          type: integer
+          description: Duration in nanoseconds
+        prompt_eval_count:
+          type: integer
+        prompt_eval_duration:
+          type: integer
+          description: Duration in nanoseconds
+        eval_count:
+          type: integer
+        eval_duration:
+          type: integer
+          description: Duration in nanoseconds
+        logprobs:
+          type: array
+          items:
+            $ref: "#/components/schemas/Logprob"
+
+    Logprob:
+      type: object
+      properties:
+        token:
+          type: string
+        logprob:
+          type: number
+          format: double
+        bytes:
+          type: array
+          items:
+            type: integer
+        top_logprobs:
+          type: array
+          items:
+            type: object
+            properties:
+              token:
+                type: string
+              logprob:
+                type: number
+                format: double
+              bytes:
+                type: array
+                items:
+                  type: integer
+
+    ProgressResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: pulling manifest
+        digest:
+          type: string
+        total:
+          type: integer
+        completed:
+          type: integer
+
+    ListModelResponse:
+      type: object
+      properties:
+        name:
+          type: string
+          example: llama3.2:latest
+        model:
+          type: string
+          example: llama3.2:latest
+        remote_model:
+          type: string
+        remote_host:
+          type: string
+        modified_at:
+          type: string
+          format: date-time
+        size:
+          type: integer
+        digest:
+          type: string
+        details:
+          $ref: "#/components/schemas/ModelDetails"
+
+    ModelDetails:
+      type: object
+      properties:
+        parent_model:
+          type: string
+        format:
+          type: string
+          example: gguf
+        family:
+          type: string
+          example: llama
+        families:
+          type: array
+          items:
+            type: string
+            example: llama
+        parameter_size:
+          type: string
+          example: 8B
+        quantization_level:
+          type: string
+          example: Q4_K_M
+
+    ShowResponse:
+      type: object
+      properties:
+        license:
+          type: string
+        modelfile:
+          type: string
+        parameters:
+          type: string
+        template:
+          type: string
+        system:
+          type: string
+        renderer:
+          type: string
+        parser:
+          type: string
+        details:
+          $ref: "#/components/schemas/ModelDetails"
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/Message"
+        remote_model:
+          type: string
+        remote_host:
+          type: string
+        model_info:
+          type: object
+        projector_info:
+          type: object
+        tensors:
+          type: array
+          items:
+            $ref: "#/components/schemas/Tensor"
+        capabilities:
+          type: array
+          items:
+            type: string
+        modified_at:
+          type: string
+          format: date-time
+        requires:
+          type: string
+
+    Tensor:
+      type: object
+      properties:
+        name:
+          type: string
+        type:
+          type: string
+        shape:
+          type: array
+          items:
+            type: integer
+
+    ProcessModelResponse:
+      type: object
+      properties:
+        name:
+          type: string
+        model:
+          type: string
+        size:
+          type: integer
+        digest:
+          type: string
+        details:
+          $ref: "#/components/schemas/ModelDetails"
+        expires_at:
+          type: string
+          format: date-time
+        size_vram:
+          type: integer
+        context_length:
+          type: integer
+
+    UserResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        name:
+          type: string
+        bio:
+          type: string
+        avatarurl:
+          type: string
+          format: uri
+        firstname:
+          type: string
+        lastname:
+          type: string
+        plan:
+          type: string
+
+    ModelRecommendation:
+      type: object
+      properties:
+        model:
+          type: string
+        description:
+          type: string
+        context_length:
+          type: integer
+        max_output_tokens:
+          type: integer
+        vram_bytes:
+          type: integer
+        required_plan:
+          type: string

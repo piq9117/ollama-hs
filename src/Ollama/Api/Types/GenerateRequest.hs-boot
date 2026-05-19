@@ -1,0 +1,18 @@
+module Ollama.Api.Types.GenerateRequest where
+import qualified Data.Aeson
+import qualified Ollama.Api.Common
+data GenerateRequest
+instance Show GenerateRequest
+instance Eq GenerateRequest
+instance Data.Aeson.FromJSON GenerateRequest
+instance Data.Aeson.ToJSON GenerateRequest
+data GenerateRequestFormatVariants
+instance Show GenerateRequestFormatVariants
+instance Eq GenerateRequestFormatVariants
+instance Data.Aeson.FromJSON GenerateRequestFormatVariants
+instance Data.Aeson.ToJSON GenerateRequestFormatVariants
+data GenerateRequestOptions
+instance Show GenerateRequestOptions
+instance Eq GenerateRequestOptions
+instance Data.Aeson.FromJSON GenerateRequestOptions
+instance Data.Aeson.ToJSON GenerateRequestOptions
