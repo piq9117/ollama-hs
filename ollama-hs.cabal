@@ -12,7 +12,7 @@ homepage:      https://github.com/piq9117/ollama-hs#readme
 bug-reports:   https://github.com/piq9117/ollama-hs/issues
 
 source-repository head
-  type: git
+  type:     git
   location: https://github.com/piq9117/ollama-hs.git
 
 library
