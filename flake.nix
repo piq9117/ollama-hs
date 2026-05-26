@@ -24,6 +24,17 @@
             });
           };
         };
+
+        ollama = prev.ollama.overrideAttrs(old: {
+          src = prev.fetchFromGitHub {
+            owner = "piq9117";
+            repo =  "ollama";
+            rev = "9832b491a8b9dcb1442e408984c9df1bf0c8c671";
+            hash = "sha256-mc7LAQLWr0PfAx81PmQnjBwK8KVXnw9ijXn/1p7fzJA=";
+          };
+          vendorHash = "sha256-u/fGOojjAW78grTlJlPc+tyMBfFDcNXpNWVL4h5IufE=";
+        });
+
         ollama-hs = final.hsPkgs.callCabal2nix "ollama-hs" ./. { };
       };
 
